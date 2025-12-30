@@ -1,285 +1,305 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { ABOUT, CERTIFICATES, EXPERIENCE, WORKS } from './data'
 
-const data = {
-  projects: [
-    { title: 'AI CCTV Alert System', description: 'Real-time detection pipeline with alerts and clips.' },
-    { title: 'BI Business Dashboard', description: 'Data warehouse + KPIs + executive-ready dashboards.' },
-    { title: 'Math Challenge Platform', description: 'Friends compete with timed quizzes and leaderboards.' },
-    { title: 'OS Lab Toolkit', description: 'Threading + IPC practice utilities and demos.' },
-  ],
-  certificates: [
-    { title: 'Certificate Name', issuer: 'Issuer', year: '2024' },
-    { title: 'Another Certificate', issuer: 'Issuer', year: '2023' },
-  ],
-  experience: [
-    { role: 'Role / Title', place: 'Company', year: '2024', blurb: 'Impact or focus area.' },
-    { role: 'Previous Role', place: 'Company', year: '2022', blurb: 'Key contribution.' },
-    { role: 'Earlier Role', place: 'Company', year: '2020', blurb: 'Skill or achievement.' },
-  ],
-}
 
-const views = {
-  home: 'home',
-  projects: 'projects',
-  certificates: 'certificates',
-  experience: 'experience',
-}
-
-const screen = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1, transition: { duration: 0.35, ease: 'easeOut' } },
-  exit: { opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } },
-}
-
-const wipe = {
+const fade = {
   initial: { opacity: 0, y: 14, filter: 'blur(6px)' },
-  animate: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.28, ease: 'easeOut' } },
-  exit: { opacity: 0, y: 10, filter: 'blur(6px)', transition: { duration: 0.18, ease: 'easeIn' } },
+  animate: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.35, ease: 'easeOut' } },
+  exit: { opacity: 0, y: 12, filter: 'blur(6px)', transition: { duration: 0.2, ease: 'easeIn' } },
 }
 
-function PromptLine({ children }) {
-  return (
-    <div className="line">
-      <span className="prompt">A:\&gt;</span>
-      <span className="text">{children}</span>
-    </div>
-  )
+const panel = {
+  initial: { opacity: 0, y: 18, scale: 0.99 },
+  animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.3, ease: 'easeOut' } },
+  exit: { opacity: 0, y: 18, scale: 0.99, transition: { duration: 0.2, ease: 'easeIn' } },
 }
 
-function FolderRow({ label, hint, onOpen }) {
-  return (
-    <motion.button
-      type="button"
-      className="folderRow"
-      onClick={onOpen}
-      whileHover={{ x: 6 }}
-      whileTap={{ scale: 0.99 }}
-    >
-      <span className="folderIcon" aria-hidden="true">
-        [DIR]
-      </span>
-      <span className="folderLabel">{label}</span>
-      <span className="folderHint">{hint}</span>
-    </motion.button>
-  )
+function Tag({ children }) {
+  return <span className="tag">{children}</span>
 }
 
 export default function App() {
-  const [view, setView] = useState(views.home)
+  const [openId, setOpenId] = useState(null)
+  const openWork = useMemo(() => WORKS.find((w) => w.id === openId) ?? null, [openId])
 
-  const header = useMemo(() => {
-    if (view === views.projects) return 'PROJECTS'
-    if (view === views.certificates) return 'CERTIFICATES'
-    if (view === views.experience) return 'EXPERIENCE'
-    return 'HOME'
-  }, [view])
+  // Spotlight cursor overlay
+  const rootRef = useRef(null)
+  const [spot, setSpot] = useState({ x: 0, y: 0, active: false })
 
-  const path = useMemo(() => {
-    if (view === views.home) return 'A:\\PORTFOLIO'
-    return `A:\\PORTFOLIO\\${header}`
-  }, [view, header])
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el) return
+
+    const onMove = (e) => {
+      const rect = el.getBoundingClientRect()
+      setSpot({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        active: true,
+      })
+    }
+    const onLeave = () => setSpot((s) => ({ ...s, active: false }))
+
+    el.addEventListener('mousemove', onMove)
+    el.addEventListener('mouseleave', onLeave)
+    return () => {
+      el.removeEventListener('mousemove', onMove)
+      el.removeEventListener('mouseleave', onLeave)
+    }
+  }, [])
 
   return (
-    <div className="crtRoot">
-      {/* CRT overlays */}
-      <div className="crtScanlines" aria-hidden="true" />
-      <div className="crtVignette" aria-hidden="true" />
-      <div className="crtGlow" aria-hidden="true" />
-      <div className="crtFlicker" aria-hidden="true" />
-
-      {/* Content */}
-      <div className="crtContent">
-        <div className="topBlock">
-          <div className="bootTitle">MS-DOS version 1.25</div>
-          <div className="bootTitle">Copyright 1981,82 Computer, Inc.</div>
-
-          <div className="spacer" />
-
-          <div className="statusLine">
-            <span className="monoDim">Command v.1.1</span>
-            <span className="monoDim">|</span>
-            <span className="monoDim">Display: CRT</span>
-            <span className="monoDim">|</span>
-            <span className="monoDim">Mode: 80x25</span>
+    <div
+      ref={rootRef}
+      className={`page ${spot.active ? 'spotOn' : ''}`}
+      style={{
+        '--mx': `${spot.x}px`,
+        '--my': `${spot.y}px`,
+      }}
+    >
+      <header className="nav">
+        <div className="navLeft">
+          <div className="brandMark" aria-hidden="true">
+            MH
           </div>
-
-          <div className="spacerSm" />
-
-          <div className="pathLine">
-            <span className="monoDim">Path:</span> <span className="monoBright">{path}</span>
-          </div>
+          
         </div>
 
-        <AnimatePresence mode="wait">
-          {view === views.home && (
-            <motion.section
-              key="home"
-              className="screen"
-              variants={screen}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <motion.div className="pane" variants={wipe} initial="initial" animate="animate" exit="exit">
-                <div className="blockTitle">ABOUT.ME</div>
+        <nav className="navRight">
+          <a className="navLink" href="#about" onClick={(e) => { e.preventDefault(); document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' }) }}>
+            About
+          </a>
+          <a className="navLink" href="#work" onClick={(e) => { e.preventDefault(); document.getElementById('work')?.scrollIntoView({ behavior: 'smooth' }) }}>
+            Projects
+          </a>
+          <a className="navLink" href="#experience" onClick={(e) => { e.preventDefault(); document.getElementById('experience')?.scrollIntoView({ behavior: 'smooth' }) }}>
+            Experience
+          </a>
+        </nav>
+      </header>
 
-                <PromptLine>type about.txt</PromptLine>
+      <div className="topRibbon" aria-hidden="true" />
 
-                <div className="typeArea">
-                  <motion.div
-                    className="typed"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1, transition: { duration: 0.25 } }}
-                  >
-                    <div className="typeLine">
-                      Hello, I&apos;m <span className="accent">Mohammed Hijazi</span>
-                    </div>
-                    <div className="typeLine dim">
-                      CS senior — systems, security, and applied AI. I build practical software with clean UX and strong
-                      fundamentals.
-                    </div>
-                    <div className="typeLine dim">Status: listening for new ideas_</div>
-                  </motion.div>
+      <main className="content">
+        {/* Hero */}
+        <section className="hero" id="about">
+          <motion.div className="heroGrid" variants={fade} initial="initial" animate="animate">
+            <div className="heroLeft">
+              <div className="hello">Hi, I&apos;m {ABOUT.name}</div>
+              <h1 className="headline">
+                Clean <span className="accentWord">analytics</span>.
+                <br />
+                Reliable decisions.
+              </h1>
+            </div>
 
-                  <span className="cursor" aria-hidden="true" />
-                </div>
+            <div className="heroRight">
+              <div className="sectionHeader heroHeader">
+                <div className="sectionTitle">About me</div>
+              </div>
+              <p className="subhead">{ABOUT.summary}</p>
 
-                <div className="spacerSm" />
+              <ul className="aboutBullets heroBullets">
+                {ABOUT.bullets.map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
+              </ul>
 
-                <div className="blockTitle">DIRECTORIES</div>
-                <PromptLine>dir</PromptLine>
-
-                <div className="dirList">
-                  <FolderRow
-                    label="PROJECTS"
-                    hint="(open to view pinned work)"
-                    onOpen={() => setView(views.projects)}
-                  />
-                  <FolderRow
-                    label="CERTIFICATES"
-                    hint="(open to view credentials)"
-                    onOpen={() => setView(views.certificates)}
-                  />
-                  <FolderRow
-                    label="EXPERIENCE"
-                    hint="(open to view timeline)"
-                    onOpen={() => setView(views.experience)}
-                  />
-                </div>
-
-                <div className="spacerSm" />
-
-                <PromptLine>
-                  help: click a directory. use <span className="monoBright">BACK</span> to return.
-                </PromptLine>
-
-                <div className="footerLine">
-                  <span className="monoDim">Email:</span>{' '}
-                  <a className="link" href="mailto:mohammed@example.com">
-                    mohammed@example.com
-                  </a>{' '}
-                  <span className="monoDim">|</span> <span className="monoDim">GitHub:</span>{' '}
-                  <a className="link" href="#" onClick={(e) => e.preventDefault()}>
-                    github.com/your-profile
+              <div className="heroActions">
+                <div className="contactChips">
+                  <a className="chip" href="mailto:7j.mo7ammed@gmail.com" aria-label="Email">
+                    <img
+                      className="chipImg"
+                      src="https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/gmail.svg"
+                      alt="Gmail"
+                    />
+                  </a>
+                  <a className="chip" href="https://www.linkedin.com/in/mohammed-nasser-hijazi/" aria-label="LinkedIn" target="_blank" rel="noreferrer">
+                    <img
+                      className="chipImg"
+                      src="https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/linkedin.svg"
+                      alt="LinkedIn"
+                    />
+                  </a>
+                  <a className="chip" href="https://github.com/Mo7j" aria-label="GitHub" target="_blank" rel="noreferrer">
+                    <img
+                      className="chipImg"
+                      src="https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/github.svg"
+                      alt="GitHub"
+                    />
                   </a>
                 </div>
-              </motion.div>
-            </motion.section>
-          )}
+              </div>
+            </div>
+          </motion.div>
+        </section>
 
-          {view !== views.home && (
-            <motion.section
-              key={view}
-              className="screen"
-              variants={screen}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <motion.div className="pane" variants={wipe} initial="initial" animate="animate" exit="exit">
-                <div className="viewHeader">
-                  <div className="viewTitle">
-                    <span className="monoDim">Directory:</span> <span className="monoBright">{header}</span>
-                  </div>
+        {/* Work / Projects */}
+        <section className="section" id="work">
+          <div className="sectionHeader">
+            <div className="sectionTitle">Projects</div>
+            <div className="sectionHint">Click to Expand</div>
+          </div>
 
+          <AnimatePresence mode="wait">
+            {!openWork ? (
+              <motion.div key="grid" className="grid" variants={fade} initial="initial" animate="animate" exit="exit">
+                {WORKS.map((w) => (
                   <motion.button
+                    key={w.id}
                     type="button"
-                    className="backBtn"
-                    onClick={() => setView(views.home)}
-                    whileHover={{ x: -4 }}
+                    className="card"
+                    onClick={() => setOpenId(w.id)}
+                    whileHover={{ y: -6 }}
                     whileTap={{ scale: 0.99 }}
                   >
-                    [ BACK ]
+                    <div className="cardTop">
+                      <div className="cardTitle">{w.title}</div>
+                      <span className="expandPill" aria-hidden="true">
+                      <svg
+                        viewBox="0 0 24 14"
+                        width="22"
+                        height="14"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M1.5 2.2 7.5 7 1.5 11.8"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M9.5 2.2 15.5 7 9.5 11.8"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                    </div>
+
+                    <div className="cardTags">
+                      {w.tags.map((t) => (
+                        <Tag key={t}>{t}</Tag>
+                      ))}
+                    </div>
+
+                    <div className="cardBlurb">{w.blurb}</div>
                   </motion.button>
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div key="detail" className="detailWrap" variants={panel} initial="initial" animate="animate" exit="exit">
+                <div className="detailHeader">
+                  <button type="button" className="back" onClick={() => setOpenId(null)}>
+                    ← Back to list
+                  </button>
+                  <span className="detailKicker">Case study</span>
                 </div>
 
-                <div className="spacerSm" />
-
-                {view === views.projects && (
-                  <>
-                    <PromptLine>type projects.txt</PromptLine>
-                    <div className="list">
-                      {data.projects.map((p) => (
-                        <div className="listRow" key={p.title}>
-                          <div className="listLeft">
-                            <span className="tag">{'<'}/PRJ{'>'}</span>
-                            <span className="listTitle">{p.title}</span>
-                          </div>
-                          <div className="listRight">{p.description}</div>
-                        </div>
+                <div className="detailCard">
+                  <div className="detailTitleRow">
+                    <h2 className="detailTitle">{openWork.title}</h2>
+                    <div className="detailTags">
+                      {openWork.tags.map((t) => (
+                        <Tag key={t}>{t}</Tag>
                       ))}
                     </div>
-                  </>
-                )}
+                  </div>
 
-                {view === views.certificates && (
-                  <>
-                    <PromptLine>type certificates.txt</PromptLine>
-                    <div className="list">
-                      {data.certificates.map((c) => (
-                        <div className="listRow" key={`${c.title}-${c.year}`}>
-                          <div className="listLeft">
-                            <span className="tag">{'<'}/CRT{'>'}</span>
-                            <span className="listTitle">{c.title}</span>
-                          </div>
-                          <div className="listRight">
-                            {c.issuer} — {c.year}
-                          </div>
-                        </div>
-                      ))}
+                  <p className="detailBlurb">{openWork.blurb}</p>
+
+                  <div className="detailCols">
+                    <div className="detailCol">
+                      <div className="detailLabel">What I did</div>
+                      <ul className="detailList">
+                        {openWork.details.map((d, i) => (
+                          <li key={i}>{d}</li>
+                        ))}
+                      </ul>
                     </div>
-                  </>
-                )}
 
-                {view === views.experience && (
-                  <>
-                    <PromptLine>type experience.txt</PromptLine>
-                    <div className="list">
-                      {data.experience.map((e) => (
-                        <div className="listRow" key={`${e.role}-${e.year}`}>
-                          <div className="listLeft">
-                            <span className="tag">{'<'}/XP{'>'}</span>
-                            <span className="listTitle">
-                              {e.role} @ {e.place}
-                            </span>
-                          </div>
-                          <div className="listRight">
-                            <span className="monoDim">{e.year}</span> — {e.blurb}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="detailCol">
+                      <div className="detailLabel">Stack</div>
+                      <ul className="detailList compact">
+                        {openWork.stack.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ul>
+
+                      <div className="divider" />
+
+                      <div className="detailLabel">Outcome</div>
+                      <p className="detailOutcome">
+                        Trusted metrics, consistent definitions, and dashboards built for action -- not vanity charts.
+                      </p>
                     </div>
-                  </>
-                )}
+                  </div>
 
-                <div className="spacerSm" />
-                <PromptLine>Press BACK to return to A:\PORTFOLIO</PromptLine>
+                  <div className="detailGallery">
+                    <div className="detailLabel">Screens</div>
+                    <div className="detailShots">
+                      <div className="shot shot-a" aria-hidden="true" />
+                      <div className="shot shot-b" aria-hidden="true" />
+                      <div className="shot shot-c" aria-hidden="true" />
+                    </div>
+                  </div>
+                </div>
               </motion.div>
-            </motion.section>
-          )}
-        </AnimatePresence>
-      </div>
+            )}
+          </AnimatePresence>
+        </section>
+
+        {/* Experience */}
+        <section className="section" id="experience">
+          <div className="sectionHeader">
+            <div className="sectionTitle">Experience</div>
+            <div className="sectionHint">A quick career snapshot.</div>
+          </div>
+
+          <div className="experienceList">
+            {EXPERIENCE.map((item) => (
+              <div key={item.role} className="experienceCard">
+                <div className="experienceTop">
+                  <div className="experienceRole">{item.role}</div>
+                  <div className="experienceYears">{item.years}</div>
+                </div>
+                <div className="experiencePlace">{item.place}</div>
+                <p className="experienceNote">{item.note}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Certificates */}
+        <section className="section" id="certificates">
+          <div className="sectionHeader">
+            <div className="sectionTitle">Certificates</div>
+            <div className="sectionHint">Recent credentials.</div>
+          </div>
+
+          <div className="certGrid">
+            {CERTIFICATES.map((cert) => (
+              <div key={cert.title} className="certCard">
+                <div className="certTitle">{cert.title}</div>
+                <div className="certMeta">
+                  <span>{cert.org}</span>
+                  <span className="certYear">{cert.year}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <footer className="footer">
+          <span>(c) {new Date().getFullYear()} {ABOUT.name}</span>
+        </footer>
+      </main>
     </div>
   )
 }
